@@ -1,0 +1,67 @@
+[
+  {
+    "id": "destination_city",
+    "type": "text",
+    "title": "Destination",
+    "description": "City or region you plan to visit",
+    "required": true,
+    "placeholder": "e.g., Tokyo, Paris, New York",
+    "answerTemplate": "I'm planning to visit {destination_city}."
+  },
+    {
+    "id": "travel_time_days",
+    "type": "number",
+    "title": "Travel time (days)",
+    "description": "How many days do you have?",
+    "required": true,
+    "min": 1,
+    "max": 21,
+    "step": 1,
+    "answerTemplate": "I have {travel_time_days} days for my trip."
+  },
+
+  {
+    "id": "companions",
+    "type": "single-select",
+    "title": "Who are you going with?",
+    "description": "Choose the primary travel group",
+    "required": false,
+    "options": [
+      { "id": "solo", "label": "Solo", "value": "solo", "answerDescription": "Just me" },
+      { "id": "couple", "label": "Couple", "value": "couple", "answerDescription": "Me and my partner" },
+      { "id": "family", "label": "Family", "value": "family", "answerDescription": "With my family" },
+      { "id": "friends", "label": "Friends", "value": "friends", "answerDescription": "With my friends" },
+      { "id": "business", "label": "Business", "value": "business", "answerDescription": "For business purposes" }
+    ],
+    "answerTemplate": "I'm traveling {companions}."
+  },
+  {
+    "id": "adventure",
+    "type": "single-select",
+    "title": "Are you an adventure person?",
+    "description": "Tell us your vibe",
+    "required": false,
+    "options": [
+      { "id": "no", "label": "Not really", "value": "no" },
+      { "id": "some", "label": "Somewhat", "value": "some" },
+      { "id": "yes", "label": "Absolutely", "value": "yes" }
+    ],
+    "answerTemplate": "I {adventure} consider myself an adventure person."
+  },
+  {
+    "id": "dietary",
+    "type": "multi-select",
+    "title": "Dietary restrictions",
+    "description": "Select all that apply",
+    "required": false,
+    "options": [
+      { "id": "none", "label": "None", "value": "none" },
+      { "id": "vegetarian", "label": "Vegetarian", "value": "vegetarian" },
+      { "id": "vegan", "label": "Vegan", "value": "vegan" },
+      { "id": "halal", "label": "Halal", "value": "halal" },
+      { "id": "kosher", "label": "Kosher", "value": "kosher" },
+      { "id": "gluten_free", "label": "Gluten‑free", "value": "gluten_free" }
+    ],
+    "answerTemplate": "My dietary restrictions are: {dietary}."
+  }
+]

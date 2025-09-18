@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-feature-settings: "rlig" 1, "calt" 1; }
+  body { @apply antialiased text-slate-900 bg-white; }
+  ::selection { @apply bg-green-200 text-slate-900; }
+}

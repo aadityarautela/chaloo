@@ -80,3 +80,5 @@ node_modules/
 .dataconnect
 
 .vscode
+
+ui/node_modules
