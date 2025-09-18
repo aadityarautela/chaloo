@@ -12,6 +12,23 @@ import { debounceTime } from 'rxjs';
   standalone: true,
   imports: [CommonModule, FormsModule, MarkdownModule],
   template: `
+    <style>
+      .date-input-container {
+        isolation: isolate;
+        position: relative;
+      }
+      .date-input-container input[type="date"] {
+        position: relative;
+        z-index: 1000;
+      }
+      .date-input-container input[type="date"]::-webkit-calendar-picker-indicator {
+        z-index: 1001;
+      }
+      /* Force date picker to appear correctly */
+      .date-input-container input[type="date"]:focus {
+        isolation: isolate;
+      }
+    </style>
     <main class="min-h-[calc(100vh-64px)] ">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div class="mb-8">
@@ -21,7 +38,7 @@ import { debounceTime } from 'rxjs';
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <!-- Left: Questions (stepper) -->
-          <section class="relative border border-slate-200/70 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+          <section class="border border-slate-200/70 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
             <div class="flex items-center justify-between mb-3">
               <h2 class="text-xl font-semibold text-slate-800">Questions</h2>
               <button type="button" (click)="reset()" class="text-sm text-slate-600 hover:text-slate-900 underline">Reset</button>
@@ -53,7 +70,16 @@ import { debounceTime } from 'rxjs';
 
                     <!-- multi-select -->
                     <div *ngIf="q.type === 'multi-select'" class="flex flex-wrap gap-2">
-                      <button *ngFor="let opt of q.options" type="button" (click)="toggleMulti(q.id, opt.value)" [class]="chipClass(isSelectedMulti(q.id, opt.value))">{{ opt.label }}</button>
+                      <button *ngFor="let opt of q.options" 
+                              type="button" 
+                              (click)="toggleMulti(q.id, opt.value)" 
+                              [class]="chipClass(isSelectedMulti(q.id, opt.value))"
+                              [disabled]="!isSelectedMulti(q.id, opt.value) && isMaxSelectionsReached(q)">
+                        {{ opt.label }}
+                      </button>
+                      <div *ngIf="q.maxSelections" class="w-full text-xs text-slate-500 mt-1">
+                        Select up to {{ q.maxSelections }} options ({{ getSelectedCount(q.id) }}/{{ q.maxSelections }} selected)
+                      </div>
                     </div>
 
                     <!-- text -->
@@ -67,11 +93,42 @@ import { debounceTime } from 'rxjs';
                       <div class="col-span-1">
                         <input type="number" class="w-full rounded border border-slate-300 px-2 py-1" [min]="q.min ?? 1" [max]="q.max ?? 10" [step]="q.step ?? 1" [ngModel]="getNumber(q.id)" (ngModelChange)="setNumber(q.id, toNumber($event))" />
                       </div>
+                      <div *ngIf="q.id === 'travel_time_days' && isAutoCalculatedFromDateRange()" class="col-span-7 text-xs text-green-600 mt-1">
+                        <span>📅 Auto-calculated from your travel dates</span>
+                      </div>
                     </div>
 
                     <!-- date -->
                     <div *ngIf="q.type === 'date'">
                       <input type="date" class="rounded-lg border border-slate-300 px-3 py-2" [ngModel]="getText(q.id)" (ngModelChange)="setText(q.id, $event)" />
+                    </div>
+
+                    <!-- date-range -->
+                    <div *ngIf="q.type === 'date-range'" class="space-y-3">
+                      <div class="date-input-container">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">
+                          {{ q.startDate?.placeholder || 'Start Date' }}
+                        </label>
+                        <input 
+                          type="date" 
+                          class="w-full rounded-lg border border-slate-300 focus:ring-2 focus:ring-green-400 focus:border-green-400 px-3 py-2 bg-white" 
+                          [min]="getDateMin(q.startDate?.min || '')"
+                          [ngModel]="getDateRangeStart(q.id)" 
+                          (ngModelChange)="setDateRangeStart(q.id, $event)"
+                        />
+                      </div>
+                      <div class="date-input-container">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">
+                          {{ q.endDate?.placeholder || 'End Date' }}
+                        </label>
+                        <input 
+                          type="date" 
+                          class="w-full rounded-lg border border-slate-300 focus:ring-2 focus:ring-green-400 focus:border-green-400 px-3 py-2 bg-white" 
+                          [min]="getDateMin(q.endDate?.min || '', getDateRangeStart(q.id))"
+                          [ngModel]="getDateRangeEnd(q.id)" 
+                          (ngModelChange)="setDateRangeEnd(q.id, $event)"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -80,11 +137,13 @@ import { debounceTime } from 'rxjs';
                       <button type="button" (click)="prev()" [disabled]="stepIndex() === 0" class="px-3 py-2 rounded-lg border border-slate-300 disabled:opacity-50">Back</button>
                     </div>
                     <div class="flex gap-2" *ngIf="!q.required">
-                      <button type="button" (click)="prev()" class="px-3 py-2 rounded-lg border border-slate-300 disabled:opacity-50">Skip</button>
+                      <button type="button" (click)="next()" class="px-3 py-2 rounded-lg border border-slate-300">Skip</button>
                     </div>
 
                     <div class="flex gap-2">
-                      <button type="button" (click)="next()" [disabled]="!canProceed(q)" class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">Next</button>
+                      <button type="button" (click)="next()" [disabled]="!canProceed(q)" class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">
+                        {{ getNextButtonText(q) }}
+                      </button>
                     </div>
                   </div>
                 </ng-container>
@@ -113,7 +172,7 @@ import { debounceTime } from 'rxjs';
           </section>
 
           <!-- Right: Itinerary -->
-          <section class="relative backdrop-blur border border-slate-200/70 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
+          <section class="backdrop-blur border border-slate-200/70 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-xl font-semibold text-slate-800">Your Itinerary</h2>
               <div class="flex items-center gap-3">
@@ -218,6 +277,10 @@ export class PlannerPageComponent {
     if (!id) return false;
     const v = this.answers()[id];
     if (Array.isArray(v)) return v.length > 0;
+    // For date-range, check if both dates are provided
+    if (v && typeof v === 'object' && 'startDate' in v && 'endDate' in v) {
+      return v.startDate && v.endDate && v.startDate.trim() !== '' && v.endDate.trim() !== '';
+    }
     return v !== undefined && v !== null && String(v).toString().trim() !== '';
   }
 
@@ -251,8 +314,20 @@ export class PlannerPageComponent {
   toggleMulti(id: string, value: string) {
     const curr: string[] = Array.isArray(this.answers()[id]) ? [...this.answers()[id]] : [];
     const idx = curr.indexOf(value);
-    if (idx >= 0) curr.splice(idx, 1);
-    else curr.push(value);
+    const question = this.questions().find(q => q.id === id);
+    const maxSelections = question?.maxSelections;
+    
+    if (idx >= 0) {
+      // Remove selection
+      curr.splice(idx, 1);
+    } else {
+      // Add selection, but check max limit
+      if (maxSelections && curr.length >= maxSelections) {
+        return; // Don't allow more selections
+      }
+      curr.push(value);
+    }
+    
     const next = { ...this.answers() };
     next[id] = curr;
     this.answers.set(next);
@@ -270,6 +345,79 @@ export class PlannerPageComponent {
   setNumber(id: string, v: number) { const next = { ...this.answers() }; next[id] = v; this.answers.set(next); }
 
   toNumber(v: any) { const n = Number(v); return isNaN(n) ? 0 : n; }
+
+  // Date range helper methods
+  getDateRangeStart(questionId: string): string {
+    const answer = this.answers()[questionId];
+    return answer?.startDate || '';
+  }
+
+  getDateRangeEnd(questionId: string): string {
+    const answer = this.answers()[questionId];
+    return answer?.endDate || '';
+  }
+
+  setDateRangeStart(questionId: string, value: string): void {
+    const next = { ...this.answers() };
+    if (!next[questionId]) {
+      next[questionId] = {};
+    }
+    next[questionId] = { ...next[questionId], startDate: value };
+    
+    // Clear end date if it's before the new start date
+    const endDate = next[questionId].endDate;
+    if (endDate && new Date(endDate) <= new Date(value)) {
+      next[questionId].endDate = '';
+    } else {
+      // Auto-calculate travel days if both dates are set
+      this.calculateTravelDaysFromDateRange(next, questionId);
+    }
+    
+    this.answers.set(next);
+  }
+
+  setDateRangeEnd(questionId: string, value: string): void {
+    const next = { ...this.answers() };
+    if (!next[questionId]) {
+      next[questionId] = {};
+    }
+    next[questionId] = { ...next[questionId], endDate: value };
+    
+    // Auto-calculate travel days if both dates are set
+    this.calculateTravelDaysFromDateRange(next, questionId);
+    
+    this.answers.set(next);
+  }
+
+  getDateMin(minConfig: string, startDate?: string): string {
+    if (minConfig === 'today') {
+      return new Date().toISOString().split('T')[0];
+    }
+    if (minConfig?.includes('start_date') && startDate) {
+      const start = new Date(startDate);
+      const offset = minConfig.includes('+ 1') ? 1 : 0;
+      start.setDate(start.getDate() + offset);
+      return start.toISOString().split('T')[0];
+    }
+    return minConfig || '';
+  }
+
+  // Auto-calculate travel days from date range
+  private calculateTravelDaysFromDateRange(answers: Record<string, any>, dateRangeQuestionId: string): void {
+    const dateRange = answers[dateRangeQuestionId];
+    if (dateRange?.startDate && dateRange?.endDate) {
+      const startDate = new Date(dateRange.startDate);
+      const endDate = new Date(dateRange.endDate);
+      
+      if (startDate <= endDate) {
+        const diffTime = endDate.getTime() - startDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end days
+        
+        // Update travel_time_days answer automatically
+        answers['travel_time_days'] = diffDays;
+      }
+    }
+  }
 
   reset() {
     this.answers.set({});
@@ -316,5 +464,43 @@ export class PlannerPageComponent {
   deleteSaved(it: SavedItinerary) {
     this.savedSvc.remove(it.id);
     this.savedList.set(this.savedSvc.list());
+  }
+
+  // Check if travel days were auto-calculated from date range
+  isAutoCalculatedFromDateRange(): boolean {
+    const answers = this.answers();
+    // Look for any date-range question that has both dates filled
+    for (const [key, value] of Object.entries(answers)) {
+      if (value && typeof value === 'object' && 'startDate' in value && 'endDate' in value) {
+        if (value.startDate && value.endDate) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Helper methods for multi-select max selections
+  isMaxSelectionsReached(question: Question): boolean {
+    if (!question.maxSelections) return false;
+    const current = this.answers()[question.id] || [];
+    return Array.isArray(current) && current.length >= question.maxSelections;
+  }
+
+  getSelectedCount(questionId: string): number {
+    const current = this.answers()[questionId] || [];
+    return Array.isArray(current) ? current.length : 0;
+  }
+
+  // Get appropriate button text for Next/Confirm
+  getNextButtonText(question: Question | undefined): string {
+    if (!question) return 'Next';
+    
+    // If this is the travel_time_days question and it's auto-calculated, show "Confirm"
+    if (question.id === 'travel_time_days' && this.isAutoCalculatedFromDateRange()) {
+      return 'Confirm';
+    }
+    
+    return 'Next';
   }
 }
