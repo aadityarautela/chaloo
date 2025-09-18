@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Planner Test</title>
+</head>
+<body>
+    <h1>AI Trip Planner Test</h1>
+    <input type="text" id="destinationInput" placeholder="Enter a destination (e.g., Rome)" style="width: 200px; padding: 5px;">
+    <button onclick="callGenerateItinerary()" style="padding: 5px;">Generate Itinerary</button>
+    <hr>
+    <h2>Result:</h2>
+    <pre id="resultArea" style="white-space: pre-wrap; background-color: #f4f4f4; padding: 10px; border-radius: 5px;">Waiting for result...</pre>
+
+    <!-- Import the Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-functions-compat.js"></script>
+
+    <script>
+        // ===================================================================
+        // TODO: REPLACE THIS WITH YOUR FIREBASE PROJECT'S CONFIG
+        // ===================================================================
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBAUN3emcbA8cIVQSjyF7Pn53GDmCxJFmU",
+  authDomain: "ai-planner-backend-qwerty.firebaseapp.com",
+  projectId: "ai-planner-backend-qwerty",
+  storageBucket: "ai-planner-backend-qwerty.firebasestorage.app",
+  messagingSenderId: "644764444038",
+  appId: "1:644764444038:web:b912054b03d5c46c133807",
+  measurementId: "G-QL7EZ77V9H"
+};
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const functions = firebase.functions();
+
+        // Function to call our backend
+        async function callGenerateItinerary() {
+            const destination = document.getElementById('destinationInput').value;
+            const resultArea = document.getElementById('resultArea');
+            
+            if (!destination) {
+                resultArea.textContent = 'Please enter a destination.';
+                return;
+            }
+
+            resultArea.textContent = 'Calling the AI... This may take a moment.';
+
+            try {
+                // Get a reference to our DEPLOYED cloud function
+                const generateItinerary = functions.httpsCallable('generate_itinerary');
+                
+                // Call the function with the destination data
+                const result = await generateItinerary({ destination: destination });
+
+                // Display the itinerary from the result
+                resultArea.textContent = result.data.itinerary;
+
+            } catch (error) {
+                console.error("Error calling function:", error);
+                resultArea.textContent = 'An error occurred: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html> 
