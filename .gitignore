@@ -82,3 +82,5 @@ node_modules/
 .vscode
 
 ui/node_modules
+
+.angular/
