@@ -8,7 +8,7 @@
     "placeholder": "e.g., Tokyo, Paris, New York",
     "answerTemplate": "I'm planning to visit {destination_city}."
   },
-    {
+  {
     "id": "travel_time_days",
     "type": "number",
     "title": "Travel time (days)",
@@ -27,11 +27,36 @@
     "description": "Choose the primary travel group",
     "required": false,
     "options": [
-      { "id": "solo", "label": "Solo", "value": "solo", "answerDescription": "Just me" },
-      { "id": "couple", "label": "Couple", "value": "couple", "answerDescription": "Me and my partner" },
-      { "id": "family", "label": "Family", "value": "family", "answerDescription": "With my family" },
-      { "id": "friends", "label": "Friends", "value": "friends", "answerDescription": "With my friends" },
-      { "id": "business", "label": "Business", "value": "business", "answerDescription": "For business purposes" }
+      {
+        "id": "solo",
+        "label": "Solo",
+        "value": "solo",
+        "answerDescription": "Just me"
+      },
+      {
+        "id": "couple",
+        "label": "Couple",
+        "value": "couple",
+        "answerDescription": "Me and my partner"
+      },
+      {
+        "id": "family",
+        "label": "Family",
+        "value": "family",
+        "answerDescription": "With my family"
+      },
+      {
+        "id": "friends",
+        "label": "Friends",
+        "value": "friends",
+        "answerDescription": "With my friends"
+      },
+      {
+        "id": "business",
+        "label": "Business",
+        "value": "business",
+        "answerDescription": "For business purposes"
+      }
     ],
     "answerTemplate": "I'm traveling {companions}."
   },
@@ -63,5 +88,112 @@
       { "id": "gluten_free", "label": "Gluten‑free", "value": "gluten_free" }
     ],
     "answerTemplate": "My dietary restrictions are: {dietary}."
+  },
+  {
+    "id": "budget_level",
+    "type": "single-select",
+    "title": "Budget level",
+    "description": "What's your approximate daily budget per person?",
+    "required": false,
+    "options": [
+      { "id": "budget", "label": "Budget ($50-100/day)", "value": "budget" },
+      { "id": "mid", "label": "Mid-range ($100-250/day)", "value": "mid" },
+      { "id": "luxury", "label": "Luxury ($250+/day)", "value": "luxury" },
+      { "id": "flexible", "label": "Flexible", "value": "flexible" }
+    ],
+    "answerTemplate": "My budget level is {budget_level}."
+  },
+  {
+    "id": "interests",
+    "type": "multi-select",
+    "title": "What interests you most?",
+    "description": "Select your top interests (max 4)",
+    "required": false,
+    "maxSelections": 4,
+    "options": [
+      { "id": "culture", "label": "Culture & History", "value": "culture" },
+      { "id": "food", "label": "Food & Dining", "value": "food" },
+      { "id": "nature", "label": "Nature & Outdoors", "value": "nature" },
+      {
+        "id": "nightlife",
+        "label": "Nightlife & Entertainment",
+        "value": "nightlife"
+      },
+      { "id": "shopping", "label": "Shopping", "value": "shopping" },
+      { "id": "art", "label": "Art & Museums", "value": "art" },
+      {
+        "id": "architecture",
+        "label": "Architecture",
+        "value": "architecture"
+      },
+      { "id": "beaches", "label": "Beaches & Water", "value": "beaches" },
+      {
+        "id": "local_life",
+        "label": "Local Life & People",
+        "value": "local_life"
+      }
+    ],
+    "answerTemplate": "I'm most interested in: {interests}."
+  },
+  {
+    "id": "pace",
+    "type": "single-select",
+    "title": "Travel pace",
+    "description": "How do you like to explore?",
+    "required": false,
+    "options": [
+      {
+        "id": "slow",
+        "label": "Relaxed - few activities, more downtime",
+        "value": "slow"
+      },
+      {
+        "id": "moderate",
+        "label": "Balanced - mix of activities and rest",
+        "value": "moderate"
+      },
+      {
+        "id": "packed",
+        "label": "Packed - see and do as much as possible",
+        "value": "packed"
+      }
+    ],
+    "answerTemplate": "I prefer a {pace} travel pace."
+  },
+  {
+    "id": "occasion",
+    "type": "single-select",
+    "title": "Special occasion?",
+    "description": "Is this trip for something special?",
+    "required": false,
+    "options": [
+      { "id": "none", "label": "Just a regular trip", "value": "none" },
+      { "id": "honeymoon", "label": "Honeymoon", "value": "honeymoon" },
+      { "id": "anniversary", "label": "Anniversary", "value": "anniversary" },
+      { "id": "birthday", "label": "Birthday", "value": "birthday" },
+      { "id": "graduation", "label": "Graduation", "value": "graduation" }
+    ],
+    "answerTemplate": "This trip is for {occasion}."
+  },
+  {
+    "id": "activity_level",
+    "type": "single-select",
+    "title": "Physical activity comfort",
+    "description": "How much walking/physical activity is okay?",
+    "required": false,
+    "options": [
+      { "id": "low", "label": "Minimal - prefer easy walks", "value": "low" },
+      {
+        "id": "moderate",
+        "label": "Moderate - comfortable with walking tours",
+        "value": "moderate"
+      },
+      {
+        "id": "high",
+        "label": "High - enjoy hiking and active exploration",
+        "value": "high"
+      }
+    ],
+    "answerTemplate": "My activity level preference is {activity_level}."
   }
 ]
