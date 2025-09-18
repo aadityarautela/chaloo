@@ -9,6 +9,33 @@
     "answerTemplate": "I'm planning to visit {destination_city}."
   },
   {
+    "id": "departure_city",
+    "type": "text",
+    "title": "Departing from",
+    "description": "Your home city or departure point",
+    "required": false,
+    "placeholder": "e.g., London, San Francisco, Mumbai",
+    "answerTemplate": "I'm departing from {departure_city}."
+  },
+  {
+    "id": "travel_dates",
+    "type": "date-range",
+    "title": "Travel dates",
+    "description": "When are you planning to travel?",
+    "required": false,
+    "startDate": {
+      "id": "start_date",
+      "placeholder": "Departure date",
+      "min": "today"
+    },
+    "endDate": {
+      "id": "end_date",
+      "placeholder": "Return date",
+      "min": "start_date + 1"
+    },
+    "answerTemplate": "I'm traveling from {start_date} to {end_date}."
+  },
+  {
     "id": "travel_time_days",
     "type": "number",
     "title": "Travel time (days)",
@@ -19,7 +46,6 @@
     "step": 1,
     "answerTemplate": "I have {travel_time_days} days for my trip."
   },
-
   {
     "id": "companions",
     "type": "single-select",
@@ -61,35 +87,6 @@
     "answerTemplate": "I'm traveling {companions}."
   },
   {
-    "id": "adventure",
-    "type": "single-select",
-    "title": "Are you an adventure person?",
-    "description": "Tell us your vibe",
-    "required": false,
-    "options": [
-      { "id": "no", "label": "Not really", "value": "no" },
-      { "id": "some", "label": "Somewhat", "value": "some" },
-      { "id": "yes", "label": "Absolutely", "value": "yes" }
-    ],
-    "answerTemplate": "I {adventure} consider myself an adventure person."
-  },
-  {
-    "id": "dietary",
-    "type": "multi-select",
-    "title": "Dietary restrictions",
-    "description": "Select all that apply",
-    "required": false,
-    "options": [
-      { "id": "none", "label": "None", "value": "none" },
-      { "id": "vegetarian", "label": "Vegetarian", "value": "vegetarian" },
-      { "id": "vegan", "label": "Vegan", "value": "vegan" },
-      { "id": "halal", "label": "Halal", "value": "halal" },
-      { "id": "kosher", "label": "Kosher", "value": "kosher" },
-      { "id": "gluten_free", "label": "Gluten‑free", "value": "gluten_free" }
-    ],
-    "answerTemplate": "My dietary restrictions are: {dietary}."
-  },
-  {
     "id": "budget_level",
     "type": "single-select",
     "title": "Budget level",
@@ -107,7 +104,7 @@
     "id": "interests",
     "type": "multi-select",
     "title": "What interests you most?",
-    "description": "Select your top interests (max 4)",
+    "description": "Select your top interests",
     "required": false,
     "maxSelections": 4,
     "options": [
@@ -161,19 +158,17 @@
     "answerTemplate": "I prefer a {pace} travel pace."
   },
   {
-    "id": "occasion",
+    "id": "adventure",
     "type": "single-select",
-    "title": "Special occasion?",
-    "description": "Is this trip for something special?",
+    "title": "Are you an adventure person?",
+    "description": "Tell us your vibe",
     "required": false,
     "options": [
-      { "id": "none", "label": "Just a regular trip", "value": "none" },
-      { "id": "honeymoon", "label": "Honeymoon", "value": "honeymoon" },
-      { "id": "anniversary", "label": "Anniversary", "value": "anniversary" },
-      { "id": "birthday", "label": "Birthday", "value": "birthday" },
-      { "id": "graduation", "label": "Graduation", "value": "graduation" }
+      { "id": "no", "label": "Not really", "value": "no" },
+      { "id": "some", "label": "Somewhat", "value": "some" },
+      { "id": "yes", "label": "Absolutely", "value": "yes" }
     ],
-    "answerTemplate": "This trip is for {occasion}."
+    "answerTemplate": "I {adventure} consider myself an adventure person."
   },
   {
     "id": "activity_level",
@@ -195,5 +190,36 @@
       }
     ],
     "answerTemplate": "My activity level preference is {activity_level}."
+  },
+  {
+    "id": "occasion",
+    "type": "single-select",
+    "title": "Special occasion?",
+    "description": "Is this trip for something special?",
+    "required": false,
+    "options": [
+      { "id": "none", "label": "Just a regular trip", "value": "none" },
+      { "id": "honeymoon", "label": "Honeymoon", "value": "honeymoon" },
+      { "id": "anniversary", "label": "Anniversary", "value": "anniversary" },
+      { "id": "birthday", "label": "Birthday", "value": "birthday" },
+      { "id": "graduation", "label": "Graduation", "value": "graduation" }
+    ],
+    "answerTemplate": "This trip is for {occasion}."
+  },
+  {
+    "id": "dietary",
+    "type": "multi-select",
+    "title": "Dietary restrictions",
+    "description": "Select all that apply",
+    "required": false,
+    "options": [
+      { "id": "none", "label": "None", "value": "none" },
+      { "id": "vegetarian", "label": "Vegetarian", "value": "vegetarian" },
+      { "id": "vegan", "label": "Vegan", "value": "vegan" },
+      { "id": "halal", "label": "Halal", "value": "halal" },
+      { "id": "kosher", "label": "Kosher", "value": "kosher" },
+      { "id": "gluten_free", "label": "Gluten‑free", "value": "gluten_free" }
+    ],
+    "answerTemplate": "My dietary restrictions are: {dietary}."
   }
 ]
