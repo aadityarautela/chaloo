@@ -7,6 +7,17 @@ yarn-error.log*
 firebase-debug.log*
 firebase-debug.*.log*
 
+
+# Python virtual environment
+venv/
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Python environment variables
+.env
+
 # Firebase cache
 .firebase/
 
