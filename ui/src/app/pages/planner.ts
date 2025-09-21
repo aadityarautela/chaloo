@@ -173,7 +173,15 @@ import { MarkdownModule } from 'ngx-markdown';
           <!-- Right: Itinerary -->
           <section class="backdrop-blur border border-slate-200/70 dark:border-slate-700 rounded-2xl p-5 shadow-sm">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-xl font-semibold text-slate-800">Your Itinerary</h2>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-semibold text-slate-800">Your Itinerary</h2>
+                <div *ngIf="isGenerating()" class="animate-spin h-4 w-4 text-green-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              </div>
               <div class="flex items-center gap-3">
                 <button type="button" (click)="saveCurrent()" class="text-sm text-green-700 hover:text-green-900 px-3 py-1.5 rounded-lg border border-green-200 bg-green-50">Save</button>
                 <button type="button" (click)="toggleSaved()" class="text-sm text-slate-600 hover:text-slate-900">Saved</button>
@@ -231,6 +239,7 @@ export class PlannerPageComponent {
   readonly stepIndex = signal(0);
   readonly showSaved = signal(false);
   readonly itineraryMarkdown = signal<string>('');
+  readonly isGenerating = signal(false);
 
   readonly highestStepReached = signal(0);
 
@@ -281,12 +290,18 @@ export class PlannerPageComponent {
   private generateItinerary() {
       console.info('[Planner] generateItinerary called. Answers:', this.answers());
       const currentAnswers = this.answers();
-      this.itinerarySvc.generateViaApi(currentAnswers).subscribe(
-        markdownResponse => {
+      this.isGenerating.set(true);
+      this.itinerarySvc.generateViaApi(currentAnswers).subscribe({
+        next: markdownResponse => {
           console.info('[Planner] Itinerary API response:', markdownResponse);
           this.itineraryMarkdown.set(markdownResponse.result.response);
+          this.isGenerating.set(false);
+        },
+        error: error => {
+          console.error('[Planner] Error generating itinerary:', error);
+          this.isGenerating.set(false);
         }
-      );
+      });
   }
 
   next() {
