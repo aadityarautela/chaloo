@@ -2,4 +2,3 @@ firebase_functions
 google-cloud-aiplatform
 firebase_admin
 vertexai
-google-cloud-logging
