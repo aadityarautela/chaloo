@@ -1,11 +1,10 @@
-import { Component, computed, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { QuestionsService, Question } from '../services/questions.service';
 import { ItineraryService } from '../services/itinerary.service';
 import { SavedItinerariesService, SavedItinerary } from '../services/saved.service';
 import { MarkdownModule } from 'ngx-markdown';
-import { debounceTime } from 'rxjs';
 
 @Component({
   selector: 'app-planner-page',
@@ -65,14 +64,14 @@ import { debounceTime } from 'rxjs';
                   <div class="mt-4">
                     <!-- single-select -->
                     <div *ngIf="q.type === 'single-select'" class="flex flex-wrap gap-2">
-                      <button *ngFor="let opt of q.options" type="button" (click)="selectSingle(q.id, opt.value); autoNext()" [class]="chipClass(isSelectedSingle(q.id, opt.value))">{{ opt.label }}</button>
+                      <button *ngFor="let opt of q.options" type="button" (click)="selectSingle(q.id, opt.value);" [class]="chipClass(isSelectedSingle(q.id, opt.value))">{{ opt.label }}</button>
                     </div>
 
                     <!-- multi-select -->
                     <div *ngIf="q.type === 'multi-select'" class="flex flex-wrap gap-2">
-                      <button *ngFor="let opt of q.options" 
-                              type="button" 
-                              (click)="toggleMulti(q.id, opt.value)" 
+                      <button *ngFor="let opt of q.options"
+                              type="button"
+                              (click)="toggleMulti(q.id, opt.value)"
                               [class]="chipClass(isSelectedMulti(q.id, opt.value))"
                               [disabled]="!isSelectedMulti(q.id, opt.value) && isMaxSelectionsReached(q)">
                         {{ opt.label }}
@@ -109,11 +108,11 @@ import { debounceTime } from 'rxjs';
                         <label class="block text-sm font-medium text-slate-700 mb-1">
                           {{ q.startDate?.placeholder || 'Start Date' }}
                         </label>
-                        <input 
-                          type="date" 
-                          class="w-full rounded-lg border border-slate-300 focus:ring-2 focus:ring-green-400 focus:border-green-400 px-3 py-2 bg-white" 
+                        <input
+                          type="date"
+                          class="w-full rounded-lg border border-slate-300 focus:ring-2 focus:ring-green-400 focus:border-green-400 px-3 py-2 bg-white"
                           [min]="getDateMin(q.startDate?.min || '')"
-                          [ngModel]="getDateRangeStart(q.id)" 
+                          [ngModel]="getDateRangeStart(q.id)"
                           (ngModelChange)="setDateRangeStart(q.id, $event)"
                         />
                       </div>
@@ -121,11 +120,11 @@ import { debounceTime } from 'rxjs';
                         <label class="block text-sm font-medium text-slate-700 mb-1">
                           {{ q.endDate?.placeholder || 'End Date' }}
                         </label>
-                        <input 
-                          type="date" 
-                          class="w-full rounded-lg border border-slate-300 focus:ring-2 focus:ring-green-400 focus:border-green-400 px-3 py-2 bg-white" 
+                        <input
+                          type="date"
+                          class="w-full rounded-lg border border-slate-300 focus:ring-2 focus:ring-green-400 focus:border-green-400 px-3 py-2 bg-white"
                           [min]="getDateMin(q.endDate?.min || '', getDateRangeStart(q.id))"
-                          [ngModel]="getDateRangeEnd(q.id)" 
+                          [ngModel]="getDateRangeEnd(q.id)"
                           (ngModelChange)="setDateRangeEnd(q.id, $event)"
                         />
                       </div>
@@ -156,7 +155,7 @@ import { debounceTime } from 'rxjs';
 
               <div class="mt-8 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                 <h3 class="text-sm font-medium text-slate-800 mb-2">Additional Comments</h3>
-                <textarea class="w-full rounded-lg border border-slate-300 focus:ring-2 focus:ring-green-400 focus:border-green-400 px-3 py-2 bg-white/90" rows="4" placeholder="Any extra details or preferences?" [ngModel]="getText('additionalComments')" (ngModelChange)="setText('additionalComments', $event)"></textarea>
+                <textarea class="w-full rounded-lg border border-slate-300 focus:ring-2 focus:ring-green-400 focus:border-green-400 px-3 py-2 bg-white/90" rows="4" placeholder="Any extra details or preferences?" [ngModel]="getText('additionalComments')" (ngModelChange)="onAdditionalCommentsChange($event)"></textarea>
               </div>
             </ng-container>
 
@@ -233,18 +232,13 @@ export class PlannerPageComponent {
   readonly showSaved = signal(false);
   readonly itineraryMarkdown = signal<string>('');
 
+  readonly highestStepReached = signal(0);
+
+  // Debounce timer for additional comments
+  private commentsDebounceTimer: any;
+
   constructor() {
     this.questionsSvc.fetchQuestions().subscribe((qs) => this.questions.set(qs));
-    
-    // Set up effect to watch answers changes
-    effect(() => {
-      const answers = this.answers();
-      if (Object.keys(answers).length > 0) {
-        this.itinerarySvc.generateViaApi(answers).pipe(debounceTime(2000)).subscribe(
-          markdownResponse => this.itineraryMarkdown.set(markdownResponse.result.response)
-        );
-      }
-    });
   }
 
   readonly currentQuestion = computed(() => this.questions()[this.stepIndex()] as Question | undefined);
@@ -284,10 +278,24 @@ export class PlannerPageComponent {
     return v !== undefined && v !== null && String(v).toString().trim() !== '';
   }
 
+  private generateItinerary() {
+      console.info('[Planner] generateItinerary called. Answers:', this.answers());
+      const currentAnswers = this.answers();
+      this.itinerarySvc.generateViaApi(currentAnswers).subscribe(
+        markdownResponse => {
+          console.info('[Planner] Itinerary API response:', markdownResponse);
+          this.itineraryMarkdown.set(markdownResponse.result.response);
+        }
+      );
+  }
+
   next() {
+    this.generateItinerary();
+
     const idx = this.stepIndex();
     if (idx < this.questions().length - 1) {
       this.stepIndex.set(idx + 1);
+      this.highestStepReached.set(Math.max(this.highestStepReached(), idx + 1));
     }
   }
   prev() {
@@ -295,12 +303,9 @@ export class PlannerPageComponent {
     if (idx > 0) this.stepIndex.set(idx - 1);
   }
   jumpTo(i: number) {
-    if (i <= this.stepIndex()) this.stepIndex.set(i);
-  }
-  autoNext() {
-    const q = this.currentQuestion();
-    if (!q) return;
-    if (q.type === 'single-select' && this.canProceed(q)) this.next();
+    if (i <= this.highestStepReached()) {
+      this.stepIndex.set(i);
+    }
   }
 
   selectSingle(id: string, value: string) {
@@ -316,18 +321,16 @@ export class PlannerPageComponent {
     const idx = curr.indexOf(value);
     const question = this.questions().find(q => q.id === id);
     const maxSelections = question?.maxSelections;
-    
+
     if (idx >= 0) {
-      // Remove selection
       curr.splice(idx, 1);
     } else {
-      // Add selection, but check max limit
       if (maxSelections && curr.length >= maxSelections) {
-        return; // Don't allow more selections
+        return;
       }
       curr.push(value);
     }
-    
+
     const next = { ...this.answers() };
     next[id] = curr;
     this.answers.set(next);
@@ -346,7 +349,6 @@ export class PlannerPageComponent {
 
   toNumber(v: any) { const n = Number(v); return isNaN(n) ? 0 : n; }
 
-  // Date range helper methods
   getDateRangeStart(questionId: string): string {
     const answer = this.answers()[questionId];
     return answer?.startDate || '';
@@ -363,16 +365,14 @@ export class PlannerPageComponent {
       next[questionId] = {};
     }
     next[questionId] = { ...next[questionId], startDate: value };
-    
-    // Clear end date if it's before the new start date
+
     const endDate = next[questionId].endDate;
     if (endDate && new Date(endDate) <= new Date(value)) {
       next[questionId].endDate = '';
     } else {
-      // Auto-calculate travel days if both dates are set
       this.calculateTravelDaysFromDateRange(next, questionId);
     }
-    
+
     this.answers.set(next);
   }
 
@@ -382,10 +382,9 @@ export class PlannerPageComponent {
       next[questionId] = {};
     }
     next[questionId] = { ...next[questionId], endDate: value };
-    
-    // Auto-calculate travel days if both dates are set
+
     this.calculateTravelDaysFromDateRange(next, questionId);
-    
+
     this.answers.set(next);
   }
 
@@ -402,18 +401,15 @@ export class PlannerPageComponent {
     return minConfig || '';
   }
 
-  // Auto-calculate travel days from date range
   private calculateTravelDaysFromDateRange(answers: Record<string, any>, dateRangeQuestionId: string): void {
     const dateRange = answers[dateRangeQuestionId];
     if (dateRange?.startDate && dateRange?.endDate) {
       const startDate = new Date(dateRange.startDate);
       const endDate = new Date(dateRange.endDate);
-      
+
       if (startDate <= endDate) {
         const diffTime = endDate.getTime() - startDate.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end days
-        
-        // Update travel_time_days answer automatically
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
         answers['travel_time_days'] = diffDays;
       }
     }
@@ -422,12 +418,14 @@ export class PlannerPageComponent {
   reset() {
     this.answers.set({});
     this.stepIndex.set(0);
+    this.itineraryMarkdown.set('');
+    this.highestStepReached.set(0); // FIX 2: Reset tracker.
   }
 
   progressPct() {
     const total = this.questions().length || 1;
-    const idx = this.stepIndex();
-    return Math.round(((idx) / total) * 100);
+    const idx = this.stepIndex() + 1; // Add 1 since stepIndex is 0-based
+    return Math.round((idx / total) * 100);
   }
 
   displayCity() {
@@ -441,13 +439,13 @@ export class PlannerPageComponent {
     const name = `${this.displayCity()} — ${new Date().toLocaleDateString()}`;
     const id = Math.random().toString(36).slice(2, 9);
     const answers = this.answers();
-    this.itinerarySvc.generateViaApi(answers).subscribe(markdown => {
+    this.itinerarySvc.generateViaApi(answers).subscribe(response => {
       const item: SavedItinerary = {
         id,
         name,
         createdAt: Date.now(),
         answers: answers,
-        markdown: markdown,
+        markdown: response.result.response,
       };
       this.savedSvc.save(item);
       this.savedList.set(this.savedSvc.list());
@@ -457,8 +455,10 @@ export class PlannerPageComponent {
   toggleSaved() { this.showSaved.set(!this.showSaved()); }
   loadSaved(it: SavedItinerary) {
     this.answers.set({ ...it.answers });
-    this.itineraryMarkdown.set(it.markdown);
-    this.stepIndex.set(this.questions().length - 1);
+    this.itineraryMarkdown.set(it.markdown); // Now works correctly.
+    const lastStep = this.questions().length -1;
+    this.stepIndex.set(lastStep);
+    this.highestStepReached.set(lastStep); // FIX 2: Ensure we can navigate freely after loading.
     this.showSaved.set(false);
   }
   deleteSaved(it: SavedItinerary) {
@@ -466,10 +466,8 @@ export class PlannerPageComponent {
     this.savedList.set(this.savedSvc.list());
   }
 
-  // Check if travel days were auto-calculated from date range
   isAutoCalculatedFromDateRange(): boolean {
     const answers = this.answers();
-    // Look for any date-range question that has both dates filled
     for (const [key, value] of Object.entries(answers)) {
       if (value && typeof value === 'object' && 'startDate' in value && 'endDate' in value) {
         if (value.startDate && value.endDate) {
@@ -480,7 +478,6 @@ export class PlannerPageComponent {
     return false;
   }
 
-  // Helper methods for multi-select max selections
   isMaxSelectionsReached(question: Question): boolean {
     if (!question.maxSelections) return false;
     const current = this.answers()[question.id] || [];
@@ -492,15 +489,29 @@ export class PlannerPageComponent {
     return Array.isArray(current) ? current.length : 0;
   }
 
-  // Get appropriate button text for Next/Confirm
   getNextButtonText(question: Question | undefined): string {
     if (!question) return 'Next';
-    
-    // If this is the travel_time_days question and it's auto-calculated, show "Confirm"
+
     if (question.id === 'travel_time_days' && this.isAutoCalculatedFromDateRange()) {
       return 'Confirm';
     }
-    
+
     return 'Next';
+  }
+
+  onAdditionalCommentsChange(value: string) {
+    // Update the value immediately
+    this.setText('additionalComments', value);
+
+    // Clear any existing timer
+    if (this.commentsDebounceTimer) {
+      clearTimeout(this.commentsDebounceTimer);
+    }
+
+    // Set a new timer for the API call
+    this.commentsDebounceTimer = setTimeout(() => {
+      console.info('[Planner] Additional comments updated, generating new itinerary');
+      this.generateItinerary();
+    }, 1000); // Wait for 1 second of no typing before making the API call
   }
 }
