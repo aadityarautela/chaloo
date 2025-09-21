@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Question, QuestionsService } from './questions.service';
 import { Injectable } from '@angular/core';
-import { debounceTime, Observable, finalize, share, of, Subject, switchMap } from 'rxjs';
+import { Observable, shareReplay, switchMap } from 'rxjs';
 
 export interface PromptRequest {
   data: {
@@ -13,22 +13,23 @@ export interface PromptRequest {
 
 @Injectable({ providedIn: 'root' })
 export class ItineraryService {
+  private questions$: Observable<Question[]>;
+
+  constructor(
+    private readonly questionsService: QuestionsService,
+    private readonly http: HttpClient
+  ) {
+    // The questions are fetched once and shared among all subscribers.
+    this.questions$ = this.questionsService.fetchQuestions().pipe(
+      shareReplay(1)
+    );
+  }
+
   /**
    * Returns a new answers object with answerTemplate substitutions for each question.
    * @param answers The raw answers map
    * @param questions The array of questions (with answerTemplate)
    */
-    questions: Question[] = [];
-      private promptSubject = new Subject<Record<string, any>>();
-
-
-    constructor(private readonly questionsService: QuestionsService, private readonly http: HttpClient) {
-      this.questionsService.fetchQuestions().subscribe((questions) => {
-        this.questions = questions;
-      });
-    }
-
-
   mapAnswersWithTemplates(answers: Record<string, any>, questions: Question[]): Record<string, any> {
     // Helper to get display value for a question's answer
     function getDisplayValue(q: Question, val: any): string {
@@ -65,26 +66,26 @@ export class ItineraryService {
     return mapped;
   }
 
-  private currentApiCall: Observable<any> | null = null;
-  private readonly DEBOUNCE_TIME = 500; // 500ms debounce
-
+  /**
+   * It no longer uses a shared Subject, which caused unpredictable behavior.
+   * It also waits for the questions to be loaded before constructing the prompt.
+   */
   generateViaApi(answers: Record<string, any>): Observable<any> {
-    this.promptSubject.next(answers);
-    
-    return this.promptSubject.pipe(
-      debounceTime(500),
-      switchMap(answers => {
-        const promptString = Object.values(this.mapAnswersWithTemplates(answers, this.questions)).join('\n');
+    // Use the cached questions$ stream. `switchMap` waits for questions to be
+    // available and then switches to the HTTP post observable.
+    return this.questions$.pipe(
+      switchMap(questions => {
+        const promptString = Object.values(this.mapAnswersWithTemplates(answers, questions)).join('\n');
         console.log('Generating itinerary via API with prompt:', promptString);
-        
-        const request: PromptRequest = { 
+
+        const request: PromptRequest = {
           data: {
             answers: answers,
-            prompt: promptString, 
-            history: [] 
-          } 
+            prompt: promptString,
+            history: []
+          }
         };
-        
+
         return this.http.post(
           'https://us-central1-ai-planner-backend-qwerty.cloudfunctions.net/gen_itinerary_chat',
           request
