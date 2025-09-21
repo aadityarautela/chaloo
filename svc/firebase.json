@@ -2,7 +2,8 @@
   "firestore": {
     "database": "(default)",
     "location": "asia-east1",
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   },
   "functions": [
     {
@@ -14,7 +15,7 @@
         "firebase-debug.*.log",
         "*.local"
       ],
-      "source": "svc/functions",
+      "source": "functions",
       "runtime": "python313"
     }
   ],
